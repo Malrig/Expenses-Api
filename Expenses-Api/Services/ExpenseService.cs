@@ -8,9 +8,9 @@ using Microsoft.EntityFrameworkCore;
 using ExpensesApi.Models;
 using ExpensesApi.ViewModels;
 using ExpensesApi.DAL;
+using ExpensesApi.Validation;
 
-namespace ExpensesApi.Services
-{
+namespace ExpensesApi.Services {
   // Define the Interface which can be used to interact with Expenses
   public interface IExpenseService {
     IEnumerable<Expense> ListExpenses();
@@ -18,29 +18,32 @@ namespace ExpensesApi.Services
     bool CreateExpense(Expense expenseToCreate);
     bool UpdateExpense(int expenseId, Expense newExpenseValues);
   }
-  
+
   // TODO - Add logging to this to capture error messages etc.
   public class ExpenseService : IExpenseService {
     private ModelStateDictionary modelState;
     private ExpenseContext expenseDb;
+    private IValidator expenseValidator;
 
-    public ExpenseService(ModelStateDictionary modelState, ExpenseContext expenseDb) {
+    public ExpenseService(ModelStateDictionary modelState, 
+                          ExpenseContext expenseDb) {
       this.modelState = modelState;
       this.expenseDb = expenseDb;
+      this.expenseValidator = new ExpenseValidator();
     }
 
-    protected bool ValidateExpense(Expense expenseToValidate) {
-      if ((expenseToValidate.name == null) ||
-          (expenseToValidate.name.Trim().Length == 0))
-        modelState.AddModelError("Name", "Name is required.");
-      if ((expenseToValidate.billedDate == null) || 
-          (expenseToValidate.billedDate == DateTime.MinValue))
-        modelState.AddModelError("billedDate", "A billed date is required.");
-      if ((expenseToValidate.expenseLines == null) ||
-          (expenseToValidate.expenseLines.Count == 0))
-        modelState.AddModelError("expenseLines", "An expense must have at least one expense line.");
-      return modelState.IsValid;
-    }
+    //protected bool ValidateExpense(Expense expenseToValidate) {
+    //  if ((expenseToValidate.name == null) ||
+    //      (expenseToValidate.name.Trim().Length == 0))
+    //    modelState.AddModelError("Name", "Name is required.");
+    //  if ((expenseToValidate.billedDate == null) ||
+    //      (expenseToValidate.billedDate == DateTime.MinValue))
+    //    modelState.AddModelError("billedDate", "A billed date is required.");
+    //  if ((expenseToValidate.expenseLines == null) ||
+    //      (expenseToValidate.expenseLines.Count == 0))
+    //    modelState.AddModelError("expenseLines", "An expense must have at least one expense line.");
+    //  return modelState.IsValid;
+    //}
 
     public IEnumerable<Expense> ListExpenses() {
       // TODO - Return this as a ViewModel instead of the direct models.
@@ -48,7 +51,7 @@ namespace ExpensesApi.Services
                       .Include(e => e.expenseLines);
     }
 
-    public Expense GetExpense(int expenseId){
+    public Expense GetExpense(int expenseId) {
       // TODO - Return the expense as a viewmodel not hte model directly
       return expenseDb.Expenses.Where(e => e.expenseId == expenseId)
                                .Include(e => e.expenseLines)
@@ -57,9 +60,10 @@ namespace ExpensesApi.Services
 
     public bool CreateExpense(Expense expenseToCreate) {
       // Validation logic
-      if (!ValidateExpense(expenseToCreate)) {
-        return false;
-      }
+      //if (!ValidateExpense(expenseToCreate)) {
+      //  return false;
+      //}
+      this.expenseValidator.Validate(expenseToCreate);
 
       // Database logic
       try {
@@ -74,13 +78,14 @@ namespace ExpensesApi.Services
 
     public bool UpdateExpense(int expenseId, Expense expenseToUpdate) {
       // Validation logic
-      if (!ValidateExpense(expenseToUpdate)){
-        return false;
-      }
+      //if (!ValidateExpense(expenseToUpdate)) {
+      //  return false;
+      //}
+      this.expenseValidator.Validate(expenseToUpdate);
 
       // Database logic
       try {
-        
+
         Expense existingExpense = expenseDb.Expenses.Where(e => e.expenseId == expenseId)
                                                     .Include(e => e.expenseLines)
                                                     .SingleOrDefault();

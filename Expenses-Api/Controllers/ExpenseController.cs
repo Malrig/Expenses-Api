@@ -4,14 +4,24 @@ using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json.Serialization;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 using ExpensesApi.Models;
 using ExpensesApi.ViewModels;
 using ExpensesApi.DAL;
 using ExpensesApi.Services;
+using ExpensesApi.Validation;
 
 namespace ExpensesApi.Controllers {
+
+  public static class MvcValidationExtension {
+    public static void AddModelErrors(this ModelStateDictionary state, ValidationException exception) {
+      foreach (var error in exception.ValidationErrors) {
+        state.AddModelError(error.key, error.message);
+      }
+    }
+  }
+
   [Route("api/[controller]")]
   public class ExpenseController : Controller {
     private IExpenseService expenseService;
@@ -48,14 +58,15 @@ namespace ExpensesApi.Controllers {
     // POST api/values
     [HttpPost]
     public IActionResult Post(Expense expenseToAdd) {
-      bool success = expenseService.CreateExpense(expenseToAdd);
-
-      if (success){
-        return Ok("Expense created successfully.");
+      try {
+        expenseService.CreateExpense(expenseToAdd);
       }
-      else {
+      catch (ValidationException ex) {
+        MvcValidationExtension.AddModelErrors(this.ModelState, ex);
         return BadRequest(this.ModelState);
       }
+      
+      return Ok("Expense created successfully.");
     }
 
     //// PUT api/values/5
