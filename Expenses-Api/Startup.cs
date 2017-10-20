@@ -28,8 +28,6 @@ namespace ExpensesApi {
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
       // Add database contexts
-      //var subscriptionContext = "Server=KNOX;Database=msghardwaretest;Integrated Security=False;MultipleActiveResultSets=True;User ID=msghardware_user;Password=sellsomeboxes;";
-      //services.AddDbContext<SubscriptionContext>(options => options.UseSqlServer(subscriptionContext));
       var expenseContext = "Server=192.168.1.72;Database=ExpensesTest;Integrated Security=False;MultipleActiveResultSets=True;User ID=sa;Password=i1yuPtFOrIUjC7S4;";
       services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(expenseContext));
 

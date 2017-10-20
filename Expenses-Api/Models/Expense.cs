@@ -16,6 +16,7 @@ namespace ExpensesApi.Models {
 
     // Foreign Objects
     public virtual ICollection<ExpenseLine> expenseLines { get; set; }
-    
+
+    public Expense() { }
   }
 }

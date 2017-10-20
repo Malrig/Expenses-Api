@@ -34,7 +34,13 @@ namespace ExpensesApi.Controllers {
     // GET api/expenses
     [HttpGet]
     public IActionResult Get() {
-      return Ok(expenseService.ListExpenses());
+      try {
+        return Ok(expenseService.ListExpenses());
+      }
+      catch (Exception e) {
+        // TODO - Log exception
+        return StatusCode(500, e);
+      }
     }
 
     // GET api/values/5
@@ -44,20 +50,25 @@ namespace ExpensesApi.Controllers {
         return BadRequest("You must supply an id when querying an individual expense.");
       }
 
-      var toReturn = expenseService.GetExpense((int)id);
+      try {
+        var toReturn = expenseService.GetExpense((int)id);
 
-      if (toReturn != null) {
-        return Ok(toReturn);
+        if (toReturn != null) {
+          return Ok(toReturn);
+        }
+        else {
+          return NotFound("No expense found with ID " + id);
+        }
       }
-      else {
-        return NotFound("No expense found with ID " + id);
+      catch (Exception e) {
+        // TODO - Log exception
+        return StatusCode(500, e);
       }
-
     }
 
     // POST api/values
     [HttpPost]
-    public IActionResult Post(Expense expenseToAdd) {
+    public IActionResult Post([FromBody]Expense expenseToAdd) {
       try {
         expenseService.CreateExpense(expenseToAdd);
       }
@@ -65,7 +76,11 @@ namespace ExpensesApi.Controllers {
         MvcValidationExtension.AddModelErrors(this.ModelState, ex);
         return BadRequest(this.ModelState);
       }
-      
+      catch (Exception e) {
+        // TODO - Log exception
+        return StatusCode(500, e);
+      }
+            
       return Ok("Expense created successfully.");
     }
 

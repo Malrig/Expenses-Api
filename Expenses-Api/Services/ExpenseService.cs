@@ -15,8 +15,8 @@ namespace ExpensesApi.Services {
   public interface IExpenseService {
     IEnumerable<Expense> ListExpenses();
     Expense GetExpense(int expenseId);
-    bool CreateExpense(Expense expenseToCreate);
-    bool UpdateExpense(int expenseId, Expense newExpenseValues);
+    void CreateExpense(Expense expenseToCreate);
+    void UpdateExpense(int expenseId, Expense newExpenseValues);
   }
 
   // TODO - Add logging to this to capture error messages etc.
@@ -58,7 +58,7 @@ namespace ExpensesApi.Services {
                                .SingleOrDefault();
     }
 
-    public bool CreateExpense(Expense expenseToCreate) {
+    public void CreateExpense(Expense expenseToCreate) {
       // Validation logic
       //if (!ValidateExpense(expenseToCreate)) {
       //  return false;
@@ -66,17 +66,11 @@ namespace ExpensesApi.Services {
       this.expenseValidator.Validate(expenseToCreate);
 
       // Database logic
-      try {
-        expenseDb.Expenses.Add(expenseToCreate);
-        expenseDb.SaveChanges();
-      }
-      catch {
-        return false;
-      }
-      return true;
+      expenseDb.Expenses.Add(expenseToCreate);
+      expenseDb.SaveChanges();
     }
 
-    public bool UpdateExpense(int expenseId, Expense expenseToUpdate) {
+    public void UpdateExpense(int expenseId, Expense expenseToUpdate) {
       // Validation logic
       //if (!ValidateExpense(expenseToUpdate)) {
       //  return false;
@@ -127,9 +121,9 @@ namespace ExpensesApi.Services {
 
       }
       catch {
-        return false;
+        //return false;
       }
-      return true;
+      //return true;
     }
   }
 }
