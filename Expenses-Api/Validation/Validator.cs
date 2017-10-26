@@ -8,7 +8,7 @@ namespace ExpensesApi.Validation {
 
   public interface IValidator {
     void Validate(object entity);
-    void ValidateAll(IList<object> entities);
+    void ValidateAll(IEnumerable<object> entities);
   }
 
   public abstract class Validator<T> : IValidator {
@@ -24,7 +24,7 @@ namespace ExpensesApi.Validation {
       }
     }
 
-    void IValidator.ValidateAll(IList<object> entities) {
+    void IValidator.ValidateAll(IEnumerable<Object> entities) {
       if (entities == null) {
         throw new ArgumentNullException("entity");
       }
@@ -33,7 +33,7 @@ namespace ExpensesApi.Validation {
                                let validator = this
                                from result in validator.PerformValidation(entity)
                                select result).ToArray();
-      
+
       if (validationResults.Length > 0) {
         throw new ValidationException(validationResults);
       }
