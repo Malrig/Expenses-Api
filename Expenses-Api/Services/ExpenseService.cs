@@ -17,33 +17,20 @@ namespace ExpensesApi.Services {
     Expense GetExpense(int expenseId);
     void CreateExpense(Expense expenseToCreate);
     void UpdateExpense(int expenseId, Expense newExpenseValues);
+    void DeleteExpense(int expenseId);
   }
 
   // TODO - Add logging to this to capture error messages etc.
   public class ExpenseService : IExpenseService {
-    private ModelStateDictionary modelState;
     private ExpenseContext expenseDb;
     private IValidator expenseValidator;
+    private IValidator expenseLineValidator;
 
-    public ExpenseService(ModelStateDictionary modelState, 
-                          ExpenseContext expenseDb) {
-      this.modelState = modelState;
+    public ExpenseService(ExpenseContext expenseDb) {
       this.expenseDb = expenseDb;
       this.expenseValidator = new ExpenseValidator();
+      this.expenseLineValidator = new ExpenseLineValidator();
     }
-
-    //protected bool ValidateExpense(Expense expenseToValidate) {
-    //  if ((expenseToValidate.name == null) ||
-    //      (expenseToValidate.name.Trim().Length == 0))
-    //    modelState.AddModelError("Name", "Name is required.");
-    //  if ((expenseToValidate.billedDate == null) ||
-    //      (expenseToValidate.billedDate == DateTime.MinValue))
-    //    modelState.AddModelError("billedDate", "A billed date is required.");
-    //  if ((expenseToValidate.expenseLines == null) ||
-    //      (expenseToValidate.expenseLines.Count == 0))
-    //    modelState.AddModelError("expenseLines", "An expense must have at least one expense line.");
-    //  return modelState.IsValid;
-    //}
 
     public IEnumerable<Expense> ListExpenses() {
       // TODO - Return this as a ViewModel instead of the direct models.
@@ -59,11 +46,9 @@ namespace ExpensesApi.Services {
     }
 
     public void CreateExpense(Expense expenseToCreate) {
-      // Validation logic
-      //if (!ValidateExpense(expenseToCreate)) {
-      //  return false;
-      //}
+      // Validate the expense (this throws an error if it fails)
       this.expenseValidator.Validate(expenseToCreate);
+      this.expenseLineValidator.ValidateAll(expenseToCreate.expenseLines);
 
       // Database logic
       expenseDb.Expenses.Add(expenseToCreate);
@@ -71,59 +56,62 @@ namespace ExpensesApi.Services {
     }
 
     public void UpdateExpense(int expenseId, Expense expenseToUpdate) {
-      // Validation logic
-      //if (!ValidateExpense(expenseToUpdate)) {
-      //  return false;
-      //}
+      // Validate the expense (this throws an error if it fails)
       this.expenseValidator.Validate(expenseToUpdate);
+      this.expenseLineValidator.ValidateAll(expenseToUpdate.expenseLines);
 
       // Database logic
-      try {
+      Expense existingExpense = expenseDb.Expenses.Where(e => e.expenseId == expenseId)
+                                                  .Include(e => e.expenseLines)
+                                                  .SingleOrDefault();
+      // Update the expense
+      expenseDb.Entry(existingExpense).CurrentValues.SetValues(expenseToUpdate);
 
-        Expense existingExpense = expenseDb.Expenses.Where(e => e.expenseId == expenseId)
-                                                    .Include(e => e.expenseLines)
-                                                    .SingleOrDefault();
-        // Update the expense
-        expenseDb.Entry(existingExpense).CurrentValues.SetValues(expenseToUpdate);
-
-        // Delete any expense lines which are no longer required
-        foreach (ExpenseLine existingLine in existingExpense.expenseLines) {
-          if (!expenseToUpdate.expenseLines.Any(el => el.expenseLineId == existingLine.expenseLineId)) {
-            expenseDb.ExpenseLines.Remove(existingLine);
-          }
+      // Delete any expense lines which are no longer required
+      foreach (ExpenseLine existingLine in existingExpense.expenseLines) {
+        if (!expenseToUpdate.expenseLines.Any(el => el.expenseLineId == existingLine.expenseLineId)) {
+          expenseDb.ExpenseLines.Remove(existingLine);
         }
+      }
 
-        // Update and add any expense lines
-        foreach (ExpenseLine lineToProcess in expenseToUpdate.expenseLines) {
-          ExpenseLine existingLine =
-            existingExpense.expenseLines
-                           .Where(el => ((el.expenseLineId == lineToProcess.expenseLineId) &&
-                                         (lineToProcess.expenseLineId != 0)))
-                           .SingleOrDefault();
+      // Update and add any expense lines
+      foreach (ExpenseLine lineToProcess in expenseToUpdate.expenseLines) {
+        ExpenseLine existingLine =
+          existingExpense.expenseLines
+                          .Where(el => ((el.expenseLineId == lineToProcess.expenseLineId) &&
+                                        (lineToProcess.expenseLineId != 0)))
+                          .SingleOrDefault();
 
-          if (existingLine != null) {
-            // Schedule portion already exists so update it
-            expenseDb.Entry(existingLine).CurrentValues.SetValues(lineToProcess);
-          }
-          else {
-            // Insert new child
-            ExpenseLine newLine = new ExpenseLine {
-              expenseId = existingExpense.expenseId,
-              name = lineToProcess.name,
-              amount = lineToProcess.amount
-            };
-
-            existingExpense.expenseLines.Add(newLine);
-          }
+        if (existingLine != null) {
+          // Schedule portion already exists so update it
+          expenseDb.Entry(existingLine).CurrentValues.SetValues(lineToProcess);
         }
+        else {
+          // Insert new child
+          ExpenseLine newLine = new ExpenseLine {
+            expenseId = existingExpense.expenseId,
+            name = lineToProcess.name,
+            amount = lineToProcess.amount
+          };
 
-        expenseDb.SaveChanges();
+          existingExpense.expenseLines.Add(newLine);
+        }
+      }
 
+      expenseDb.SaveChanges();
+    }
+
+    public void DeleteExpense(int expenseId) {
+      Expense toDelete = expenseDb.Expenses.Where(e => e.expenseId == expenseId)
+                                           .Include(e => e.expenseLines)
+                                           .SingleOrDefault();
+
+      if (toDelete != null) {
+        expenseDb.Expenses.Remove(toDelete);
       }
-      catch {
-        //return false;
+      else {
+        throw new KeyNotFoundException($"No expense exists with ID: {expenseId.ToString()}");
       }
-      //return true;
     }
   }
 }

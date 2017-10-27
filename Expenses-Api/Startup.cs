@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 
 using ExpensesApi.DAL;
+using ExpensesApi.Services;
 
 namespace ExpensesApi {
   public class Startup {
@@ -52,6 +53,8 @@ namespace ExpensesApi {
         .AddJsonOptions(options => {
           options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         }); // JSON, or you can build your own custom one (above)
+
+      //services.AddScoped<IExpenseService, ExpenseService>();
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

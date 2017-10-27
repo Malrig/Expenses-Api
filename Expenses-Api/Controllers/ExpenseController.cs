@@ -27,8 +27,7 @@ namespace ExpensesApi.Controllers {
     private IExpenseService expenseService;
 
     public ExpenseController(ExpenseContext db) {
-      expenseService = new ExpenseService(this.ModelState, db);
-      this.ModelState.AddModelError("Name", "Name is required.");
+      expenseService = new ExpenseService(db);
     }
 
     // GET api/expenses
@@ -68,9 +67,9 @@ namespace ExpensesApi.Controllers {
 
     // POST api/values
     [HttpPost]
-    public IActionResult Post([FromBody]Expense expenseToAdd) {
+    public IActionResult Post([FromBody]Expense expenseToProcess) {
       try {
-        expenseService.CreateExpense(expenseToAdd);
+        expenseService.CreateExpense(expenseToProcess);
       }
       catch (ValidationException ex) {
         MvcValidationExtension.AddModelErrors(this.ModelState, ex);
@@ -84,85 +83,39 @@ namespace ExpensesApi.Controllers {
       return Ok("Expense created successfully.");
     }
 
-    //// PUT api/values/5
-    //[HttpPut("{id}")]
-    //public IActionResult Put(int? id, Expense expenseToProcess) {
-    //  List<string> errorMessages = new List<string>();
+    // PUT api/values/5
+    [HttpPut("{id}")]
+    public IActionResult Put(int id, [FromBody]Expense expenseToProcess) {
+      try {
+        expenseService.UpdateExpense(id, expenseToProcess);
+      }
+      catch (ValidationException valEx) {
+        MvcValidationExtension.AddModelErrors(this.ModelState, valEx);
+        return BadRequest(this.ModelState);
+      }
+      catch (Exception e) {
+        // TODO - Log exception
+        return StatusCode(500, e);
+      }
 
-    //  if (id == null) {
-    //    return BadRequest("You must supply an id when updating an expense.");
-    //  }
+      return Ok("Expense updated successfully.");
+    }
 
-    //  if (expenseToProcess == null) {
-    //    return BadRequest("You must supply the updated expense.");
-    //  }
+    // DELETE api/values/5
+    [HttpDelete("{id}")]
+    public IActionResult Delete(int id) {
+      try {
+        expenseService.DeleteExpense(id);
+      }
+      catch (KeyNotFoundException noKeyEx) {
+        return NotFound(noKeyEx.Message);
+      }
+      catch (Exception e) {
+        // TODO - Log exception
+        return StatusCode(500, e);
+      }
 
-    //  Expense existingExpense = db.Expenses.Where(e => e.expenseId == id)
-    //                                       .Include(e => e.expenseLines)
-    //                                       .SingleOrDefault();
-
-    //  // Perform various checks to make sure it is a valid expense
-    //  if ((expenseToProcess.expenseLines == null) ||
-    //      (expenseToProcess.expenseLines.Count() == 0)) {
-    //    errorMessages.Add("No expense lines present on the expense. ");
-    //  }
-
-    //  // Update the expense
-    //  db.Entry(existingExpense).CurrentValues.SetValues(expenseToProcess);
-
-    //  // Delete any expense lines which are no longer required
-    //  foreach (ExpenseLine existingLine in existingExpense.expenseLines) {
-    //    if (!expenseToProcess.expenseLines.Any(el => el.expenseLineId == existingLine.expenseLineId)) {
-    //      db.ExpenseLines.Remove(existingLine);
-    //    }
-    //  }
-
-    //  if (errorMessages.Count == 0) {
-    //    // Update and add any expense lines
-    //    foreach (ExpenseLine lineToProcess in expenseToProcess.expenseLines) {
-    //      ExpenseLine existingLine =
-    //        existingExpense.expenseLines
-    //                       .Where(el => ((el.expenseLineId == lineToProcess.expenseLineId) &&
-    //                                     (lineToProcess.expenseLineId != 0)))
-    //                       .SingleOrDefault();
-
-    //      if (existingLine != null) {
-    //        // Schedule portion already exists so update it
-    //        db.Entry(existingLine).CurrentValues.SetValues(lineToProcess);
-    //      }
-    //      else {
-    //        // Insert new child
-    //        ExpenseLine newLine = new ExpenseLine {
-    //          expenseId = existingExpense.expenseId,
-    //          name = lineToProcess.name,
-    //          amount = lineToProcess.amount
-    //        };
-
-    //        existingExpense.expenseLines.Add(newLine);
-    //      }
-    //    }
-
-    //    try {
-    //      db.SaveChanges();
-    //    }
-    //    catch (Exception ex) {
-    //      // TODO Don't return the exception but instead log it and add a user friendly message.
-    //      //errorMessages.Add("Failed to update the database, please try again.");
-    //      return BadRequest(ex);
-    //    }
-    //  }
-
-    //  if (errorMessages.Count > 0) {
-    //    return BadRequest(errorMessages);
-    //  }
-    //  else {
-    //    return Ok("Expense successfully updated.");
-    //  }
-    //}
-
-    ////// DELETE api/values/5
-    ////[HttpDelete("{id}")]
-    ////public void Delete(int id) {
-    ////}
+      return NoContent();
+    }
   }
 }
