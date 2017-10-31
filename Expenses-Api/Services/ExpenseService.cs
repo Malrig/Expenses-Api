@@ -39,10 +39,17 @@ namespace ExpensesApi.Services {
     }
 
     public Expense GetExpense(int expenseId) {
+      // Database logic
+      Expense expenseToReturn = expenseDb.Expenses.Where(e => e.expenseId == expenseId)
+                                                  .Include(e => e.expenseLines)
+                                                  .SingleOrDefault();
+
+      if (expenseToReturn == null) {
+        throw new KeyNotFoundException("No expense with ID: " + expenseId);
+      }
+
       // TODO - Return the expense as a viewmodel not hte model directly
-      return expenseDb.Expenses.Where(e => e.expenseId == expenseId)
-                               .Include(e => e.expenseLines)
-                               .SingleOrDefault();
+      return expenseToReturn;
     }
 
     public void CreateExpense(Expense expenseToCreate) {
@@ -64,6 +71,10 @@ namespace ExpensesApi.Services {
       Expense existingExpense = expenseDb.Expenses.Where(e => e.expenseId == expenseId)
                                                   .Include(e => e.expenseLines)
                                                   .SingleOrDefault();
+
+      if (existingExpense == null) {
+        throw new KeyNotFoundException("No expense with ID: " + expenseId);
+      }
       // Update the expense
       expenseDb.Entry(existingExpense).CurrentValues.SetValues(expenseToUpdate);
 

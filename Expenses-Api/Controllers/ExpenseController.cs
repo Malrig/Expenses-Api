@@ -30,7 +30,15 @@ namespace ExpensesApi.Controllers {
       expenseService = new ExpenseService(db);
     }
 
-    // GET api/expenses
+
+    /// <summary>
+    /// Get all expenses
+    /// </summary>
+    /// <remarks>
+    /// Get a list of all expenses
+    /// </remarks>
+    /// <returns></returns>
+    /// <response code="200">Returns a successful message</response>
     [HttpGet]
     public IActionResult Get() {
       try {
@@ -44,30 +52,51 @@ namespace ExpensesApi.Controllers {
 
     // GET api/values/5
     [HttpGet("{id}")]
-    public IActionResult Get(int? id) {
-      if (id == null) {
-        return BadRequest("You must supply an id when querying an individual expense.");
-      }
+    public IActionResult Get(int id) {
+      Expense expenseToReturn;
 
       try {
-        var toReturn = expenseService.GetExpense((int)id);
-
-        if (toReturn != null) {
-          return Ok(toReturn);
-        }
-        else {
-          return NotFound("No expense found with ID " + id);
-        }
+        expenseToReturn = expenseService.GetExpense(id);
+      }
+      catch (KeyNotFoundException noKeyEx) {
+        return NotFound(noKeyEx.Message);
       }
       catch (Exception e) {
         // TODO - Log exception
         return StatusCode(500, e);
       }
+
+      return Ok(expenseToReturn);
     }
 
-    // POST api/values
+    /// <summary>
+    /// Creates an expense item.
+    /// </summary>
+    /// <remarks>
+    /// Sample request:
+    ///
+    ///     POST /Todo
+    ///     {
+    ///         "name": "New Title",
+    ///         "billedDate": "2017-02-01T00:00:00",
+    ///         "effectiveDate": null,
+    ///         "expenseLines": [
+    ///             {
+    ///                 "name": "New Entry 1",
+    ///                 "amount": 100
+    ///             }
+    ///         ]
+    ///     }
+    ///
+    /// </remarks>
+    /// <param name="expenseToProcess"></param>
+    /// <returns>A 200 response</returns>
+    /// <response code="200">Returns a successful message</response>
+    /// <response code="400">If the item fails validation</response>    
     [HttpPost]
-    public IActionResult Post([FromBody]Expense expenseToProcess) {
+    [ProducesResponseType(typeof(Expense), 201)]
+    [ProducesResponseType(typeof(Expense), 400)]
+    public IActionResult Create([FromBody]Expense expenseToProcess) {
       try {
         expenseService.CreateExpense(expenseToProcess);
       }
@@ -79,19 +108,23 @@ namespace ExpensesApi.Controllers {
         // TODO - Log exception
         return StatusCode(500, e);
       }
-            
+
       return Ok("Expense created successfully.");
     }
 
     // PUT api/values/5
     [HttpPut("{id}")]
-    public IActionResult Put(int id, [FromBody]Expense expenseToProcess) {
+    [HttpPost("{id}")]
+    public IActionResult Update(int id, [FromBody]Expense expenseToProcess) {
       try {
         expenseService.UpdateExpense(id, expenseToProcess);
       }
       catch (ValidationException valEx) {
         MvcValidationExtension.AddModelErrors(this.ModelState, valEx);
         return BadRequest(this.ModelState);
+      }
+      catch (KeyNotFoundException noKeyEx) {
+        return NotFound(noKeyEx.Message);
       }
       catch (Exception e) {
         // TODO - Log exception
@@ -112,7 +145,7 @@ namespace ExpensesApi.Controllers {
       }
       catch (Exception e) {
         // TODO - Log exception
-        return StatusCode(500, e);
+        return StatusCode(500, e.Message);
       }
 
       return NoContent();

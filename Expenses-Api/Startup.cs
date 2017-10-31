@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -9,6 +10,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
+using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.Extensions.PlatformAbstractions;
 
 using ExpensesApi.DAL;
 using ExpensesApi.Services;
@@ -28,9 +31,19 @@ namespace ExpensesApi {
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
-      // Add database contexts
-      var expenseContext = "Server=192.168.1.72;Database=ExpensesTest;Integrated Security=False;MultipleActiveResultSets=True;User ID=sa;Password=i1yuPtFOrIUjC7S4;";
-      services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(expenseContext));
+      // Get the connection strings and whether to use an in memory database
+      bool useInMemory = Convert.ToBoolean(Configuration["UseInMemoryDatabase"]);
+      string expenseConnectionString = Configuration.GetConnectionString("expense");
+
+      // Either create the context as in memory or using a connection string
+      if ((!useInMemory) &&
+          (expenseConnectionString != null) &&
+          (expenseConnectionString != "")) {
+        services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(expenseConnectionString));
+      }
+      else {
+        services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
+      }
 
       // Add framework services.
       services
@@ -52,16 +65,35 @@ namespace ExpensesApi {
         .AddJsonFormatters()
         .AddJsonOptions(options => {
           options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
-        }); // JSON, or you can build your own custom one (above)
+        }) // JSON, or you can build your own custom one (above)
+        .AddApiExplorer(); // Required for Swagger UI
 
+      // TODO - Add proper dependency injection for services.
       //services.AddScoped<IExpenseService, ExpenseService>();
+
+      // Register the Swagger generator, defining one or more Swagger documents
+      services.AddSwaggerGen(c => {
+        c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+        // Set the comments path for the Swagger JSON and UI.
+        var basePath = PlatformServices.Default.Application.ApplicationBasePath;
+        var xmlPath = Path.Combine(basePath, "Expenses-Api.xml");
+        c.IncludeXmlComments(xmlPath);
+      });
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory) {
       loggerFactory.AddConsole(Configuration.GetSection("Logging"));
       loggerFactory.AddDebug();
-      
+
+      // Enable middleware to serve generated Swagger as a JSON endpoint.
+      app.UseSwagger();
+      // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
+      app.UseSwaggerUI(c =>
+      {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+      });
+
       app.UseMvc();
     }
   }
