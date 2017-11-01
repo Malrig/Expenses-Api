@@ -13,24 +13,21 @@ using ExpensesApi.Services;
 using ExpensesApi.Validation;
 
 namespace ExpensesApi.Controllers {
-
-  public static class MvcValidationExtension {
-    public static void AddModelErrors(this ModelStateDictionary state, ValidationException exception) {
-      foreach (var error in exception.ValidationErrors) {
-        state.AddModelError(error.key, error.message);
-      }
-    }
-  }
-
+  /// <summary>
+  /// Handles all requests concerning expenses
+  /// </summary>
   [Route("api/[controller]")]
   public class ExpenseController : Controller {
     private IExpenseService expenseService;
 
+    /// <summary>
+    /// Constructor for the expense controller
+    /// </summary>
+    /// <param name="db"></param>
     public ExpenseController(ExpenseContext db) {
       expenseService = new ExpenseService(db);
     }
-
-
+    
     /// <summary>
     /// Get all expenses
     /// </summary>
@@ -40,6 +37,7 @@ namespace ExpensesApi.Controllers {
     /// <returns></returns>
     /// <response code="200">Returns a successful message</response>
     [HttpGet]
+    [ProducesResponseType(typeof(List<Expense>), 200)]
     public IActionResult Get() {
       try {
         return Ok(expenseService.ListExpenses());
@@ -50,8 +48,18 @@ namespace ExpensesApi.Controllers {
       }
     }
 
-    // GET api/values/5
+    /// <summary>
+    /// Get a single expenses
+    /// </summary>
+    /// <remarks>
+    /// Get an individual expense
+    /// </remarks>
+    /// <returns></returns>
+    /// <response code="200">Returns a successful message</response>
+    /// <response code="404">If the expense item does not exist</response>
     [HttpGet("{id}")]
+    [ProducesResponseType(typeof(Expense), 200)]
+    [ProducesResponseType(typeof(String), 404)]
     public IActionResult Get(int id) {
       Expense expenseToReturn;
 
@@ -73,9 +81,10 @@ namespace ExpensesApi.Controllers {
     /// Creates an expense item.
     /// </summary>
     /// <remarks>
+    /// Creates an expense item including it's expense lines.
+    /// 
     /// Sample request:
     ///
-    ///     POST /Todo
     ///     {
     ///         "name": "New Title",
     ///         "billedDate": "2017-02-01T00:00:00",
@@ -89,13 +98,13 @@ namespace ExpensesApi.Controllers {
     ///     }
     ///
     /// </remarks>
-    /// <param name="expenseToProcess"></param>
-    /// <returns>A 200 response</returns>
+    /// <param name="expenseToProcess">The expense to create</param>
+    /// <returns></returns>
     /// <response code="200">Returns a successful message</response>
     /// <response code="400">If the item fails validation</response>    
     [HttpPost]
-    [ProducesResponseType(typeof(Expense), 201)]
-    [ProducesResponseType(typeof(Expense), 400)]
+    [ProducesResponseType(typeof(String), 200)]
+    [ProducesResponseType(typeof(ModelStateDictionary), 400)]
     public IActionResult Create([FromBody]Expense expenseToProcess) {
       try {
         expenseService.CreateExpense(expenseToProcess);
@@ -112,9 +121,39 @@ namespace ExpensesApi.Controllers {
       return Ok("Expense created successfully.");
     }
 
-    // PUT api/values/5
+
+    /// <summary>
+    /// Updates an expense item.
+    /// </summary>
+    /// <remarks>
+    /// Updates an expense and adds/updates/deletes it's expense lines.
+    /// 
+    /// Sample request:
+    ///
+    ///     {
+    ///         "name": "New Title",
+    ///         "billedDate": "2017-02-01T00:00:00",
+    ///         "effectiveDate": null,
+    ///         "expenseLines": [
+    ///             {
+    ///                 "name": "New Entry 1",
+    ///                 "amount": 100
+    ///             }
+    ///         ]
+    ///     }
+    ///
+    /// </remarks>
+    /// <param name="id">The ID of the expense to update</param>
+    /// <param name="expenseToProcess">The values to change to</param>
+    /// <returns></returns>
+    /// <response code="200">Returns a successful message</response>
+    /// <response code="400">If the item fails validation</response> 
+    /// <response code="404">If the expense item does not exist</response>
     [HttpPut("{id}")]
     [HttpPost("{id}")]
+    [ProducesResponseType(typeof(String), 200)]
+    [ProducesResponseType(typeof(ModelStateDictionary), 400)]
+    [ProducesResponseType(typeof(String), 404)]
     public IActionResult Update(int id, [FromBody]Expense expenseToProcess) {
       try {
         expenseService.UpdateExpense(id, expenseToProcess);
@@ -134,8 +173,18 @@ namespace ExpensesApi.Controllers {
       return Ok("Expense updated successfully.");
     }
 
-    // DELETE api/values/5
+    /// <summary>
+    /// Delete an expenses
+    /// </summary>
+    /// <remarks>
+    /// Delete an individual expense and it's expense lines
+    /// </remarks>
+    /// <returns></returns>
+    /// <response code="204">Delete successful returns no content</response>
+    /// <response code="404">If the expense item does not exist</response>
     [HttpDelete("{id}")]
+    [ProducesResponseType(typeof(void), 204)]
+    [ProducesResponseType(typeof(string), 404)]
     public IActionResult Delete(int id) {
       try {
         expenseService.DeleteExpense(id);

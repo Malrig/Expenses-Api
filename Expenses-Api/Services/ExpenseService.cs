@@ -123,6 +123,8 @@ namespace ExpensesApi.Services {
       else {
         throw new KeyNotFoundException($"No expense exists with ID: {expenseId.ToString()}");
       }
+
+      expenseDb.SaveChanges();
     }
   }
 }
