@@ -5,17 +5,21 @@ using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Authorization;
 
 using ExpensesApi.Models;
 using ExpensesApi.ViewModels;
 using ExpensesApi.DAL;
 using ExpensesApi.Services;
 using ExpensesApi.Validation;
+using ExpensesApi.Identity;
+using ExpensesApi.Identity.DAL;
 
 namespace ExpensesApi.Controllers {
   /// <summary>
   /// Handles all requests concerning expenses
   /// </summary>
+  [Authorize]
   [Route("api/[controller]")]
   public class ExpenseController : Controller {
     private IExpenseService expenseService;

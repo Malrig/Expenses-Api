@@ -12,8 +12,12 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Swagger;
 using Microsoft.Extensions.PlatformAbstractions;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 using ExpensesApi.DAL;
+using ExpensesApi.Identity;
+using ExpensesApi.Identity.DAL;
 using ExpensesApi.Services;
 
 namespace ExpensesApi {
@@ -34,14 +38,19 @@ namespace ExpensesApi {
       // Get the connection strings and whether to use an in memory database
       bool useInMemory = Convert.ToBoolean(Configuration["UseInMemoryDatabase"]);
       string expenseConnectionString = Configuration.GetConnectionString("expense");
+      string identityConnectionString = Configuration.GetConnectionString("identity");
 
-      // Either create the context as in memory or using a connection string
+      //Either create the context in memory or using a connection string
       if ((!useInMemory) &&
           (expenseConnectionString != null) &&
-          (expenseConnectionString != "")) {
+          (expenseConnectionString != "") &&
+          (identityConnectionString != null) &&
+          (identityConnectionString != "")) {
         services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(expenseConnectionString));
+        services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(identityConnectionString));
       }
       else {
+        services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
         services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
       }
 
@@ -71,6 +80,11 @@ namespace ExpensesApi {
       // TODO - Add proper dependency injection for services.
       //services.AddScoped<IExpenseService, ExpenseService>();
 
+      // Register the Identity service
+      services.AddIdentity<ApplicationUser, IdentityRole<int>>()
+              .AddEntityFrameworkStores<IdentityContext, int>()
+              .AddDefaultTokenProviders();
+
       // Register the Swagger generator, defining one or more Swagger documents
       services.AddSwaggerGen(c => {
         c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
@@ -85,6 +99,10 @@ namespace ExpensesApi {
     public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory) {
       loggerFactory.AddConsole(Configuration.GetSection("Logging"));
       loggerFactory.AddDebug();
+
+      // Enable middleware for identity
+      app.UseStaticFiles(); // TODO Check if this is required.
+      app.UseIdentity();
 
       // Enable middleware to serve generated Swagger as a JSON endpoint.
       app.UseSwagger();
