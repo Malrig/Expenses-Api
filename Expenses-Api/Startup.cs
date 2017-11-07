@@ -47,11 +47,11 @@ namespace ExpensesApi {
           (identityConnectionString != null) &&
           (identityConnectionString != "")) {
         services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(expenseConnectionString));
-        services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(identityConnectionString));
+        services.AddDbContext<IdentityContext>(options => options.UseSqlServer(identityConnectionString));
       }
       else {
         services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
-        services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
+        services.AddDbContext<IdentityContext>(options => options.UseInMemoryDatabase());
       }
 
       // Add framework services.
@@ -75,8 +75,9 @@ namespace ExpensesApi {
         .AddJsonOptions(options => {
           options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
         }) // JSON, or you can build your own custom one (above)
-        .AddApiExplorer(); // Required for Swagger UI
-
+        .AddApiExplorer() // Required for Swagger UI
+        .AddAuthorization(); // Required for Identity to work
+        
       // TODO - Add proper dependency injection for services.
       //services.AddScoped<IExpenseService, ExpenseService>();
 
