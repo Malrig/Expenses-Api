@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,13 +12,17 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Swagger;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 using ExpensesApi.DAL;
-using ExpensesApi.Identity;
 using ExpensesApi.Identity.DAL;
+using ExpensesApi.Identity.Models;
 using ExpensesApi.Services;
 
 namespace ExpensesApi {
@@ -82,9 +87,40 @@ namespace ExpensesApi {
       //services.AddScoped<IExpenseService, ExpenseService>();
 
       // Register the Identity service
-      services.AddIdentity<ApplicationUser, IdentityRole<int>>()
-              .AddEntityFrameworkStores<IdentityContext, int>()
-              .AddDefaultTokenProviders();
+      services
+        .AddIdentity<ApplicationUser, IdentityRole<int>>(options => {
+        // Set the paths for the AccessDenied and Login pages 
+        // (will be actions not pages as this is an API)
+        options.Cookies.ApplicationCookie.AccessDeniedPath = "/accessdenied";
+        options.Cookies.ApplicationCookie.LoginPath = "/login";
+        options.Cookies.ApplicationCookie.LoginPath = "/logout";
+
+        // TODO Work out exactly what these event handlers are doing.
+        options.Cookies.ApplicationCookie.Events = new CookieAuthenticationEvents() {
+          OnRedirectToAccessDenied = context => {
+            if (context.Request.Path.StartsWithSegments("/api")) {
+              context.Response.StatusCode = 403;
+              return Task.FromResult(0);
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.FromResult(0);
+
+          },
+          OnRedirectToLogin = context =>
+          {
+            if (context.Request.Path.StartsWithSegments("/api")) {
+              context.Response.StatusCode = 401;
+              return Task.FromResult(0);
+            }
+
+            context.Response.Redirect(context.RedirectUri);
+            return Task.FromResult(0);
+          }
+        };
+      })
+      .AddEntityFrameworkStores<IdentityContext, int>()
+      .AddDefaultTokenProviders();
 
       // Register the Swagger generator, defining one or more Swagger documents
       services.AddSwaggerGen(c => {
@@ -101,8 +137,20 @@ namespace ExpensesApi {
       loggerFactory.AddConsole(Configuration.GetSection("Logging"));
       loggerFactory.AddDebug();
 
-      // Enable middleware for identity
       app.UseStaticFiles(); // TODO Check if this is required.
+      // Enable use of JSON Web Tokens
+      app.UseJwtBearerAuthentication(new JwtBearerOptions {
+        AutomaticAuthenticate = true,
+        AutomaticChallenge = true,
+        TokenValidationParameters = new TokenValidationParameters {
+          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("AppConfiguration:Key").Value)),
+          ValidAudience = Configuration.GetSection("AppConfiguration:SiteUrl").Value,
+          ValidateIssuerSigningKey = true,
+          ValidateLifetime = true,
+          ValidIssuer = Configuration.GetSection("AppConfiguration:SiteUrl").Value
+        }
+      });
+      // Enable middleware for identity
       app.UseIdentity();
 
       // Enable middleware to serve generated Swagger as a JSON endpoint.
