@@ -4,6 +4,7 @@ using System.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 using Newtonsoft.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -23,20 +24,28 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using ExpensesApi.DAL;
 using ExpensesApi.Identity.DAL;
 using ExpensesApi.Identity.Models;
+using ExpensesApi.Identity.Utilities;
 using ExpensesApi.Services;
 
 namespace ExpensesApi {
   public class Startup {
+    const string TokenAudience = "ExampleAudience";
+    const string TokenIssuer = "ExampleIssuer";
+    private RsaSecurityKey key;
+    private TokenAuthOptions tokenOptions;
+
+    public IConfigurationRoot Configuration { get; }
+
     public Startup(IHostingEnvironment env) {
       var builder = new ConfigurationBuilder()
           .SetBasePath(env.ContentRootPath)
           .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
           .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
           .AddEnvironmentVariables();
+
       Configuration = builder.Build();
     }
 
-    public IConfigurationRoot Configuration { get; }
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
@@ -58,6 +67,12 @@ namespace ExpensesApi {
         services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
         services.AddDbContext<IdentityContext>(options => options.UseInMemoryDatabase());
       }
+
+      // Set up the JWT Bearer Tokens
+      // This part of the code heavily taken from 
+      // https://github.com/mrsheepuk/ASPNETSelfCreatedTokenAuthExample/tree/master/src/TokenAuthExampleWebApplication
+      // TODO look into changing this so that it doesn't regenerate everytime the app is restarted.
+      RSAParameters keyParams = RSAKeyUtils.GetRandomKey();
 
       // Add framework services.
       services
