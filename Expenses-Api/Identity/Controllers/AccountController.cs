@@ -7,8 +7,6 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
 
 using ExpensesApi.Identity.DAL;
 using ExpensesApi.Identity.Models;
@@ -60,25 +58,5 @@ namespace ExpensesApi.Identity.Controllers {
 
       return Ok();
     }
-
-    //[HttpPost("token")]
-    //public async Task<IActionResult> Token([FromBody] AccountRegisterLogin model) {
-    //  if (!ModelState.IsValid) {
-    //    return BadRequest();
-    //  }
-
-    //  var user = await userManager.FindByNameAsync(model.Email);
-
-    //  if (user == null || passwordHasher.VerifyHashedPassword(user, user.PasswordHash, model.Password) != PasswordVerificationResult.Success) {
-    //    return BadRequest();
-    //  }
-
-    //  var token = await GetJwtSecurityToken(user);
-
-    //  return Ok(new {
-    //    token = new JwtSecurityTokenHandler().WriteToken(token),
-    //    expiration = token.ValidTo
-    //  });
-    //}
   }
 }

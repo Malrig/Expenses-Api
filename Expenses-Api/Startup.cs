@@ -12,12 +12,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Swagger;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 using ExpensesApi.DAL;
@@ -138,18 +136,6 @@ namespace ExpensesApi {
       loggerFactory.AddDebug();
 
       app.UseStaticFiles(); // TODO Check if this is required.
-      // Enable use of JSON Web Tokens
-      app.UseJwtBearerAuthentication(new JwtBearerOptions {
-        AutomaticAuthenticate = true,
-        AutomaticChallenge = true,
-        TokenValidationParameters = new TokenValidationParameters {
-          IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration.GetSection("AppConfiguration:Key").Value)),
-          ValidAudience = Configuration.GetSection("AppConfiguration:SiteUrl").Value,
-          ValidateIssuerSigningKey = true,
-          ValidateLifetime = true,
-          ValidIssuer = Configuration.GetSection("AppConfiguration:SiteUrl").Value
-        }
-      });
       // Enable middleware for identity
       app.UseIdentity();
 
