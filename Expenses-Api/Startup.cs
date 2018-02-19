@@ -26,23 +26,29 @@ using ExpensesApi.Services;
 
 namespace ExpensesApi {
   public class Startup {
+    public IConfigurationRoot configuration { get; }
+    public IConfigurationRoot hostingConfiguration { get; }
+
     public Startup(IHostingEnvironment env) {
       var builder = new ConfigurationBuilder()
           .SetBasePath(env.ContentRootPath)
           .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
           .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true)
           .AddEnvironmentVariables();
-      Configuration = builder.Build();
-    }
+      configuration = builder.Build();
 
-    public IConfigurationRoot Configuration { get; }
+      var hostingBuilder = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("hosting.json");
+      hostingConfiguration = hostingBuilder.Build();
+    }
 
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
       // Get the connection strings and whether to use an in memory database
-      bool useInMemory = Convert.ToBoolean(Configuration["UseInMemoryDatabase"]);
-      string expenseConnectionString = Configuration.GetConnectionString("expense");
-      string identityConnectionString = Configuration.GetConnectionString("identity");
+      bool useInMemory = Convert.ToBoolean(configuration["UseInMemoryDatabase"]);
+      string expenseConnectionString = configuration.GetConnectionString("expense");
+      string identityConnectionString = configuration.GetConnectionString("identity");
 
       //Either create the context in memory or using a connection string
       if ((!useInMemory) &&
@@ -133,9 +139,20 @@ namespace ExpensesApi {
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory) {
-      loggerFactory.AddConsole(Configuration.GetSection("Logging"));
+      loggerFactory.AddConsole(configuration.GetSection("Logging"));
       loggerFactory.AddDebug();
 
+      // Need to double check this but think it sets up redirects
+      // correctly to use the base path.
+      string basePath = Convert.ToString(hostingConfiguration["basePath"]);
+
+      if (!string.IsNullOrEmpty(basePath)) {
+        app.Use(async (context, next) =>
+        {
+          context.Request.PathBase = basePath;
+          await next.Invoke();
+        });
+      }
       // This needs to be added if the app is to be behind a Reverse-Proxy, it ensures that the 
       // app uses the forwarded headers. This is necessary to construct complete links etc.
       app.UseForwardedHeaders(new ForwardedHeadersOptions {
@@ -151,7 +168,7 @@ namespace ExpensesApi {
       // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
       app.UseSwaggerUI(c =>
       {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+        c.SwaggerEndpoint(basePath + "/swagger/v1/swagger.json", "My API V1");
       });
 
       app.UseMvc();

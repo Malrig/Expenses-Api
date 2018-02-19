@@ -11,14 +11,14 @@ namespace ExpensesApi {
   public class Program {
     public static void Main(string[] args) {
 
-      var config = new ConfigurationBuilder()
+      var hostingConfig = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("hosting.json", optional: true)
+            .AddJsonFile("hosting.json")
             .AddCommandLine(args)
             .Build();
 
       var host = new WebHostBuilder()
-          .UseConfiguration(config)
+          .UseConfiguration(hostingConfig)
           .UseKestrel()
           .UseContentRoot(Directory.GetCurrentDirectory())
           .UseIISIntegration()

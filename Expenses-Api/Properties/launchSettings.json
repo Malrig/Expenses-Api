@@ -33,6 +33,12 @@
         "ASPNETCORE_ENVIRONMENT": "InMemory"
       },
       "applicationUrl": "http://localhost:60702"
+    },
+    "Expenses-Api (Production)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      }
     }
   }
 }
