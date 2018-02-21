@@ -12,8 +12,6 @@ using ExpensesApi.ViewModels;
 using ExpensesApi.DAL;
 using ExpensesApi.Services;
 using ExpensesApi.Validation;
-using ExpensesApi.Identity;
-using ExpensesApi.Identity.DAL;
 
 namespace ExpensesApi.Controllers {
   /// <summary>

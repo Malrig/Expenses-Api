@@ -1,4 +1,4 @@
 ﻿{
-  "urls": "http://localhost:5000/expenses/",
-  "basePath": "/expenses"
+  "urls": "http://localhost:5001/",
+  "basePath": "/expenses/"
 }

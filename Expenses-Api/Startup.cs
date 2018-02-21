@@ -13,15 +13,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Swagger;
-using Microsoft.Extensions.PlatformAbstractions;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 
 using ExpensesApi.DAL;
-using ExpensesApi.Identity.DAL;
-using ExpensesApi.Identity.Models;
 using ExpensesApi.Services;
 
 namespace ExpensesApi {
@@ -47,36 +42,43 @@ namespace ExpensesApi {
     public void ConfigureServices(IServiceCollection services) {
       // Get the connection strings and whether to use an in memory database
       bool useInMemory = Convert.ToBoolean(configuration["UseInMemoryDatabase"]);
-      string expenseConnectionString = configuration.GetConnectionString("expense");
-      string identityConnectionString = configuration.GetConnectionString("identity");
+      string expenseConnectionString = configuration.GetConnectionString("ExpenseDatabase");
 
       //Either create the context in memory or using a connection string
       if ((!useInMemory) &&
           (expenseConnectionString != null) &&
-          (expenseConnectionString != "") &&
-          (identityConnectionString != null) &&
-          (identityConnectionString != "")) {
+          (expenseConnectionString != "")) {
         services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(expenseConnectionString));
-        services.AddDbContext<IdentityContext>(options => options.UseSqlServer(identityConnectionString));
       }
       else {
         services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
-        services.AddDbContext<IdentityContext>(options => options.UseInMemoryDatabase());
       }
+
+      // Configure JWT based authentication
+      services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options => {
+          options.TokenValidationParameters = new TokenValidationParameters {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            // Get the below information from configuration/secrets
+            ValidIssuer = configuration["Jwt:Issuer"],
+            ValidAudience = configuration["Jwt:Issuer"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["Jwt:Key"]))
+          };
+        });
 
       // Add framework services.
       services
         .AddMvcCore(options => {
           options.RequireHttpsPermanent = true; // does not affect api requests
           options.RespectBrowserAcceptHeader = true; // false by default
-                                                     //options.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
-
+          //options.OutputFormatters.RemoveType<HttpNoContentOutputFormatter>();
           //remove these two below, but added so you know where to place them...
           //options.OutputFormatters.Add(new YourCustomOutputFormatter());
           //options.InputFormatters.Add(new YourCustomInputFormatter());
         })
-        //.AddApiExplorer()
-        //.AddAuthorization()
         .AddFormatterMappings()
         //.AddCacheTagHelper()
         //.AddDataAnnotations()
@@ -87,51 +89,19 @@ namespace ExpensesApi {
         }) // JSON, or you can build your own custom one (above)
         .AddApiExplorer() // Required for Swagger UI
         .AddAuthorization(); // Required for Identity to work
-        
+
       // TODO - Add proper dependency injection for services.
       //services.AddScoped<IExpenseService, ExpenseService>();
 
-      // Register the Identity service
-      services
-        .AddIdentity<ApplicationUser, IdentityRole<int>>(options => {
-        // Set the paths for the AccessDenied and Login pages 
-        // (will be actions not pages as this is an API)
-        options.Cookies.ApplicationCookie.AccessDeniedPath = "/accessdenied";
-        options.Cookies.ApplicationCookie.LoginPath = "/login";
-        options.Cookies.ApplicationCookie.LoginPath = "/logout";
-
-        // TODO Work out exactly what these event handlers are doing.
-        options.Cookies.ApplicationCookie.Events = new CookieAuthenticationEvents() {
-          OnRedirectToAccessDenied = context => {
-            if (context.Request.Path.StartsWithSegments("/api")) {
-              context.Response.StatusCode = 403;
-              return Task.FromResult(0);
-            }
-
-            context.Response.Redirect(context.RedirectUri);
-            return Task.FromResult(0);
-
-          },
-          OnRedirectToLogin = context =>
-          {
-            if (context.Request.Path.StartsWithSegments("/api")) {
-              context.Response.StatusCode = 401;
-              return Task.FromResult(0);
-            }
-
-            context.Response.Redirect(context.RedirectUri);
-            return Task.FromResult(0);
-          }
-        };
-      })
-      .AddEntityFrameworkStores<IdentityContext, int>()
-      .AddDefaultTokenProviders();
-
       // Register the Swagger generator, defining one or more Swagger documents
       services.AddSwaggerGen(c => {
-        c.SwaggerDoc("v1", new Info { Title = "My API", Version = "v1" });
+        c.SwaggerDoc("v1", 
+                     new Info {
+                       Title = "Expenses API",
+                       Version = "v1"
+                     });
         // Set the comments path for the Swagger JSON and UI.
-        var basePath = PlatformServices.Default.Application.ApplicationBasePath;
+        var basePath = AppContext.BaseDirectory;
         var xmlPath = Path.Combine(basePath, "Expenses-Api.xml");
         c.IncludeXmlComments(xmlPath);
       });
@@ -142,35 +112,25 @@ namespace ExpensesApi {
       loggerFactory.AddConsole(configuration.GetSection("Logging"));
       loggerFactory.AddDebug();
 
-      // Need to double check this but think it sets up redirects
-      // correctly to use the base path.
+      // Sets up the base path urls map correctly
       string basePath = Convert.ToString(hostingConfiguration["basePath"]);
-
-      if (!string.IsNullOrEmpty(basePath)) {
-        app.Use(async (context, next) =>
-        {
-          context.Request.PathBase = basePath;
-          await next.Invoke();
-        });
-      }
+      app.UsePathBase(basePath);
+      
       // This needs to be added if the app is to be behind a Reverse-Proxy, it ensures that the 
       // app uses the forwarded headers. This is necessary to construct complete links etc.
       app.UseForwardedHeaders(new ForwardedHeadersOptions {
         ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
       });
 
-      app.UseStaticFiles(); // TODO Check if this is required.
-      // Enable middleware for identity
-      app.UseIdentity();
+      // Enable authentication
+      app.UseAuthentication();
 
       // Enable middleware to serve generated Swagger as a JSON endpoint.
       app.UseSwagger();
       // Enable middleware to serve swagger-ui (HTML, JS, CSS, etc.), specifying the Swagger JSON endpoint.
-      app.UseSwaggerUI(c =>
-      {
-        c.SwaggerEndpoint(basePath + "/swagger/v1/swagger.json", "My API V1");
+      app.UseSwaggerUI(c => {
+        c.SwaggerEndpoint(Path.Combine(basePath, "/swagger/v1/swagger.json"), "My API V1");
       });
-
       app.UseMvc();
     }
   }
