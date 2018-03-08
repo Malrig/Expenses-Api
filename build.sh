@@ -4,7 +4,7 @@
 set -ev
 
 # Output the version being built against
-echo dotnet --version
+dotnet --version
 
 # Display minimal restore text
 dotnet restore --verbosity m
