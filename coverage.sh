@@ -31,10 +31,8 @@ coverage=./coverage
 rm -rf $coverage
 mkdir $coverage
 
-dotnet test -f netcoreapp1.0 $DOTNET_TEST_ARGS test/Stubbery.IntegrationTests/Stubbery.IntegrationTests.csproj
-
 echo "Calculating coverage with OpenCover"
-$OPENCOVER \  
+$OPENCOVER \
   -target:"C:\Program Files\dotnet\dotnet.exe" \
   -targetargs:"test $DOTNET_TEST_ARGS ./Expenses-Api-Tests/Expenses-Api-Tests.csproj" \
   -register:user \
@@ -49,9 +47,10 @@ $REPORTGENERATOR \
   -reports:$coverage/coverage.xml \
   -targetdir:$coverage \
   -verbosity:Error
-
+  
 if [ -n "$COVERALLS_REPO_TOKEN" ]
 then
+  echo "Sending report to Coveralls"
   nuget install -OutputDirectory packages -Version 0.7.0 coveralls.net
   packages/coveralls.net.0.7.0/tools/csmacnz.Coveralls.exe --opencover -i coverage/coverage.xml --useRelativePaths
 fi
