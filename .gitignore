@@ -287,4 +287,5 @@ __pycache__/
 *.xsd.cs
 
 Expenses-Api/Migrations/*
+coverage/
 
