@@ -14,8 +14,9 @@ while (( "$#" )); do
     echo "Not running tests..."
     runtests=false
   elif [[ "$1" == "--publish" ]]
+  then
     echo "Publish the build"
-	publish = true
+	publish=true
   fi
   shift
 done
@@ -34,3 +35,4 @@ if [[ "$publish" = true ]]
 then
   dotnet publish -c Release ./Expenses-Api/Expenses-Api.csproj -r ubuntu.16.04-x64 -o ../artifacts/
 fi
+$shell
