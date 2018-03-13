@@ -4,9 +4,6 @@ clone_depth: 1
 environment:
   COVERALLS_REPO_TOKEN:
     secure: +cX+n7gwyXAg/X7MCEqNDKURWjrD7stFB8FMtxJUKdX/M0AqLIbaZ/R4gin2iEt8
-branches:
-  only:
-  - master
 init:
   # Good practise, because Windows line endings are different from Unix/Linux ones
   - cmd: git config --global core.autocrlf true

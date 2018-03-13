@@ -7,9 +7,6 @@ addons:
   ssh_known_hosts: malrig.homelinuxserver.org:22022
 os:
   - linux
-branches:
-  only:
-    - master
 before_script:
   - chmod a+x ./build.sh
 script:
