@@ -6,11 +6,11 @@ using System.Threading.Tasks;
 namespace ExpensesApi.Validation {
   public class ValidationResult {
     public ValidationResult(string key, string message) {
-      this.key = key;
-      this.message = message;
+      this.Key = key;
+      this.Message = message;
     }
-    public string key { get; private set; }
-    public string message { get; private set; }
+    public string Key { get; private set; }
+    public string Message { get; private set; }
 
     public override bool Equals(object obj) {
       if (!(obj is ValidationResult)) {
@@ -18,8 +18,8 @@ namespace ExpensesApi.Validation {
       }
       ValidationResult other = (ValidationResult)obj;
 
-      if ((!other.key.Equals(this.key)) ||
-          (!other.message.Equals(this.message))) {
+      if ((!other.Key.Equals(this.Key)) ||
+          (!other.Message.Equals(this.Message))) {
         return false;
       }
 
@@ -28,8 +28,8 @@ namespace ExpensesApi.Validation {
 
     public override int GetHashCode() {
       int hash = 13;
-      hash = (hash * 7) + (key != null ? key.GetHashCode() : 0);
-      hash = (hash * 7) + (message != null ? message.GetHashCode() : 0);
+      hash = (hash * 7) + (Key != null ? Key.GetHashCode() : 0);
+      hash = (hash * 7) + (Message != null ? Message.GetHashCode() : 0);
       return hash;
     }
   }

@@ -9,8 +9,8 @@ using Microsoft.AspNetCore.Authorization;
 
 using ExpensesApi.Models;
 using ExpensesApi.ViewModels;
-using ExpensesApi.DAL;
 using ExpensesApi.Services;
+using ExpensesApi.Services.Expenses;
 using ExpensesApi.Validation;
 
 namespace ExpensesApi.Controllers {
@@ -20,14 +20,18 @@ namespace ExpensesApi.Controllers {
   [Authorize]
   [Route("api/[controller]")]
   public class ExpenseController : Controller {
-    private IExpenseService expenseService;
+    private IQueryHandler<FindAllExpenses, ExpensesOverview> getExpensesOverview { get; }
+    private IQueryHandler<FindExpenseById, ExpenseDetail> getExpenseDetail { get; }
 
     /// <summary>
     /// Constructor for the expense controller
     /// </summary>
-    /// <param name="db"></param>
-    public ExpenseController(ExpenseContext db) {
-      expenseService = new ExpenseService(db);
+    /// <param name="getExpensesOverview"></param>
+    /// <param name="getExpenseDetail"></param>
+    public ExpenseController(IQueryHandler<FindAllExpenses, ExpensesOverview> getExpensesOverview,
+                             IQueryHandler<FindExpenseById, ExpenseDetail> getExpenseDetail) {
+      this.getExpensesOverview = getExpensesOverview;
+      this.getExpenseDetail = getExpenseDetail;
     }
     
     /// <summary>
@@ -42,7 +46,7 @@ namespace ExpensesApi.Controllers {
     [ProducesResponseType(typeof(List<Expense>), 200)]
     public IActionResult Get() {
       try {
-        return Ok(expenseService.ListExpenses());
+        return Ok(getExpensesOverview.Handle(new FindAllExpenses()));
       }
       catch (Exception e) {
         // TODO - Log exception
@@ -60,13 +64,13 @@ namespace ExpensesApi.Controllers {
     /// <response code="200">Returns a successful message</response>
     /// <response code="404">If the expense item does not exist</response>
     [HttpGet("{id}")]
-    [ProducesResponseType(typeof(Expense), 200)]
+    [ProducesResponseType(typeof(ExpenseDetail), 200)]
     [ProducesResponseType(typeof(String), 404)]
     public IActionResult Get(int id) {
-      Expense expenseToReturn;
+      ExpenseDetail expenseToReturn;
 
       try {
-        expenseToReturn = expenseService.GetExpense(id);
+        expenseToReturn = getExpenseDetail.Handle(new FindExpenseById(id));
       }
       catch (KeyNotFoundException noKeyEx) {
         return NotFound(noKeyEx.Message);
@@ -104,24 +108,24 @@ namespace ExpensesApi.Controllers {
     /// <returns></returns>
     /// <response code="200">Returns a successful message</response>
     /// <response code="400">If the item fails validation</response>    
-    [HttpPost]
-    [ProducesResponseType(typeof(String), 200)]
-    [ProducesResponseType(typeof(ModelStateDictionary), 400)]
-    public IActionResult Create([FromBody]Expense expenseToProcess) {
-      try {
-        expenseService.CreateExpense(expenseToProcess);
-      }
-      catch (ValidationException ex) {
-        MvcValidationExtension.AddModelErrors(this.ModelState, ex);
-        return BadRequest(this.ModelState);
-      }
-      catch (Exception e) {
-        // TODO - Log exception
-        return StatusCode(500, e);
-      }
+    //[HttpPost]
+    //[ProducesResponseType(typeof(String), 200)]
+    //[ProducesResponseType(typeof(ModelStateDictionary), 400)]
+    //public IActionResult Create([FromBody]Expense expenseToProcess) {
+    //  try {
+    //    expenseService.CreateExpense(expenseToProcess);
+    //  }
+    //  catch (ValidationException ex) {
+    //    MvcValidationExtension.AddModelErrors(this.ModelState, ex);
+    //    return BadRequest(this.ModelState);
+    //  }
+    //  catch (Exception e) {
+    //    // TODO - Log exception
+    //    return StatusCode(500, e);
+    //  }
 
-      return Ok("Expense created successfully.");
-    }
+    //  return Ok("Expense created successfully.");
+    //}
 
 
     /// <summary>
@@ -151,29 +155,29 @@ namespace ExpensesApi.Controllers {
     /// <response code="200">Returns a successful message</response>
     /// <response code="400">If the item fails validation</response> 
     /// <response code="404">If the expense item does not exist</response>
-    [HttpPut("{id}")]
-    [HttpPost("{id}")]
-    [ProducesResponseType(typeof(String), 200)]
-    [ProducesResponseType(typeof(ModelStateDictionary), 400)]
-    [ProducesResponseType(typeof(String), 404)]
-    public IActionResult Update(int id, [FromBody]Expense expenseToProcess) {
-      try {
-        expenseService.UpdateExpense(id, expenseToProcess);
-      }
-      catch (ValidationException valEx) {
-        MvcValidationExtension.AddModelErrors(this.ModelState, valEx);
-        return BadRequest(this.ModelState);
-      }
-      catch (KeyNotFoundException noKeyEx) {
-        return NotFound(noKeyEx.Message);
-      }
-      catch (Exception e) {
-        // TODO - Log exception
-        return StatusCode(500, e);
-      }
+    //[HttpPut("{id}")]
+    //[HttpPost("{id}")]
+    //[ProducesResponseType(typeof(String), 200)]
+    //[ProducesResponseType(typeof(ModelStateDictionary), 400)]
+    //[ProducesResponseType(typeof(String), 404)]
+    //public IActionResult Update(int id, [FromBody]Expense expenseToProcess) {
+    //  try {
+    //    expenseService.UpdateExpense(id, expenseToProcess);
+    //  }
+    //  catch (ValidationException valEx) {
+    //    MvcValidationExtension.AddModelErrors(this.ModelState, valEx);
+    //    return BadRequest(this.ModelState);
+    //  }
+    //  catch (KeyNotFoundException noKeyEx) {
+    //    return NotFound(noKeyEx.Message);
+    //  }
+    //  catch (Exception e) {
+    //    // TODO - Log exception
+    //    return StatusCode(500, e);
+    //  }
 
-      return Ok("Expense updated successfully.");
-    }
+    //  return Ok("Expense updated successfully.");
+    //}
 
     /// <summary>
     /// Delete an expenses
@@ -184,22 +188,22 @@ namespace ExpensesApi.Controllers {
     /// <returns></returns>
     /// <response code="204">Delete successful returns no content</response>
     /// <response code="404">If the expense item does not exist</response>
-    [HttpDelete("{id}")]
-    [ProducesResponseType(typeof(void), 204)]
-    [ProducesResponseType(typeof(string), 404)]
-    public IActionResult Delete(int id) {
-      try {
-        expenseService.DeleteExpense(id);
-      }
-      catch (KeyNotFoundException noKeyEx) {
-        return NotFound(noKeyEx.Message);
-      }
-      catch (Exception e) {
-        // TODO - Log exception
-        return StatusCode(500, e.Message);
-      }
+    //[HttpDelete("{id}")]
+    //[ProducesResponseType(typeof(void), 204)]
+    //[ProducesResponseType(typeof(string), 404)]
+    //public IActionResult Delete(int id) {
+    //  try {
+    //    expenseService.DeleteExpense(id);
+    //  }
+    //  catch (KeyNotFoundException noKeyEx) {
+    //    return NotFound(noKeyEx.Message);
+    //  }
+    //  catch (Exception e) {
+    //    // TODO - Log exception
+    //    return StatusCode(500, e.Message);
+    //  }
 
-      return NoContent();
-    }
+    //  return NoContent();
+    //}
   }
 }

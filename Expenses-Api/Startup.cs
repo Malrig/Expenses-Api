@@ -17,7 +17,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
 using ExpensesApi.DAL;
+using ExpensesApi.ViewModels;
 using ExpensesApi.Services;
+using ExpensesApi.Services.Expenses;
+using ExpensesApi.Services.ExpenseLines;
 
 namespace ExpensesApi {
   public class Startup {
@@ -105,6 +108,8 @@ namespace ExpensesApi {
         var xmlPath = Path.Combine(basePath, "Expenses-Api.xml");
         c.IncludeXmlComments(xmlPath);
       });
+
+      ConfigureApplicationServices(services);
     }
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -133,6 +138,14 @@ namespace ExpensesApi {
         c.SwaggerEndpoint(Path.Combine(basePath, "swagger/v1/swagger.json"), "My API V1");
       });
       app.UseMvc();
+    }
+
+    public void ConfigureApplicationServices(IServiceCollection services) {
+      // Add all queries as available services
+      services
+        .AddScoped<IQueryHandler<FindAllExpenses, ExpensesOverview>, GetExpensesOverview>()
+        .AddScoped<IQueryHandler<FindExpenseById, ExpenseDetail>, GetExpenseDetail>()
+        .AddScoped<IQueryHandler<FindExpenseLinesByExpense, ExpenseLineList>, GetExpenseLinesForExpense>();
     }
   }
 }
