@@ -15,7 +15,7 @@ namespace ExpensesApi.Services.ExpenseLines {
     }
 
     public void Handle(AddUpdateExpenseLineInfo command) {
-      ExpenseLine existingLine = expenseDb.ExpenseLines.Where(e => e.expenseId == command.expenseLineId)
+      ExpenseLine existingLine = expenseDb.ExpenseLines.Where(e => e.expenseLineId == command.expenseLineId)
                                                        .SingleOrDefault();
       
       if (existingLine == null) {

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 using ExpensesApi.DAL;
 using ExpensesApi.Models;
@@ -22,8 +23,10 @@ namespace ExpensesApi.Services.Expenses {
     }
 
     public void Handle(AddUpdateExpenseInfo command) {
-      Expense existing = expenseDb.Expenses.Where(e => e.expenseId == command.expenseId)
-                                                       .SingleOrDefault();
+      Expense existing = expenseDb.Expenses
+                                  .Where(e => e.expenseId == command.expenseId)
+                                  .Include(e => e.expenseLines)
+                                  .SingleOrDefault();
 
       if (existing == null) {
         expenseDb.Expenses.Add(command.GetExpense());
@@ -32,12 +35,17 @@ namespace ExpensesApi.Services.Expenses {
         expenseDb.Entry(existing).CurrentValues.SetValues(command);
 
         // Only update the expense lines if they are specified
-        if (command.expenseLinesIncluded) {
+        if (command.UpdateExpenseLines()) {
+          List<int> linesToDelete = new List<int>();
+
           // Check expense lines and delete any that no longer exist
           foreach (ExpenseLine existingLine in existing.expenseLines) {
             if (!command.expenseLines.Any(el => el.expenseLineId == existingLine.expenseLineId)) {
-              deleteExpenseLine.Handle(new DeleteExpenseLineInfo(existingLine.expenseLineId));
+              linesToDelete.Add(existingLine.expenseLineId);
             }
+          }
+          foreach (int expenseLineId in linesToDelete) {
+            deleteExpenseLine.Handle(new DeleteExpenseLineInfo(expenseLineId));
           }
 
           // Update and add any expense lines
@@ -59,10 +67,7 @@ namespace ExpensesApi.Services.Expenses {
 
     public List<ExpenseLine> expenseLines { get; set; }
 
-    public bool expenseLinesIncluded {
-      get => expenseLinesIncluded && (expenseLines != null);
-      set => expenseLinesIncluded = value;
-    }
+    public bool expenseLinesIncluded { get; set; } = false;
 
     public AddUpdateExpenseInfo() { }
 
@@ -74,6 +79,10 @@ namespace ExpensesApi.Services.Expenses {
         effectiveDate = effectiveDate,
         expenseLines = expenseLines
       };
+    }
+
+    public bool UpdateExpenseLines() {
+      return expenseLinesIncluded && expenseLines != null;
     }
   }
 }

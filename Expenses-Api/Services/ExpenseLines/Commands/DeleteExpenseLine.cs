@@ -16,7 +16,7 @@ namespace ExpensesApi.Services.ExpenseLines {
 
     public void Handle(DeleteExpenseLineInfo command) {
       ExpenseLine expenseLineToDelete = expenseDb.ExpenseLines
-                                                 .Where(e => e.expenseId == command.expenseLineId)
+                                                 .Where(e => e.expenseLineId == command.expenseLineId)
                                                  .SingleOrDefault();
 
       expenseDb.ExpenseLines.Remove(expenseLineToDelete);
@@ -29,9 +29,8 @@ namespace ExpensesApi.Services.ExpenseLines {
     public int expenseLineId { get; set; }
 
     public DeleteExpenseLineInfo() { }
-    public DeleteExpenseLineInfo(int id) {
+    public DeleteExpenseLineInfo(int expenseLineId) {
       this.expenseLineId = expenseLineId;
     }
-
   }
 }
