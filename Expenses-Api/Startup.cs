@@ -21,6 +21,9 @@ using ExpensesApi.ViewModels;
 using ExpensesApi.Services;
 using ExpensesApi.Services.Expenses;
 using ExpensesApi.Services.ExpenseLines;
+using ExpensesApi.Validation;
+using ExpensesApi.Validation.Expenses;
+using ExpensesApi.Validation.ExpenseLines;
 
 namespace ExpensesApi {
   public class Startup {
@@ -146,6 +149,24 @@ namespace ExpensesApi {
         .AddScoped<IQueryHandler<FindAllExpenses, ExpensesOverview>, GetExpensesOverview>()
         .AddScoped<IQueryHandler<FindExpenseById, ExpenseDetail>, GetExpenseDetail>()
         .AddScoped<IQueryHandler<FindExpenseLinesByExpense, ExpenseLineList>, GetExpenseLinesForExpense>();
+
+      // Add all commands which don't require validation
+      services
+        .AddScoped<ICommandHandler<AddExpenseInfo>, AddExpense>()
+        .AddScoped<ICommandHandler<UpdateExpenseInfo>, UpdateExpense>()
+        .AddScoped<ICommandHandler<DeleteExpenseInfo>, DeleteExpense>()
+        .AddScoped<ICommandHandler<DeleteExpenseLineInfo>, DeleteExpenseLine>();
+
+      // Add commands which have validators associated with them
+      // Should be of the format Command, CommandInfo, Validator
+      CommandHandlerRegistration
+        .RegisterCommandHandler<AddExpense, AddExpenseInfo, AddExpenseValidator>(services);
+      CommandHandlerRegistration
+        .RegisterCommandHandler<UpdateExpense, UpdateExpenseInfo, UpdateExpenseValidator>(services);
+      CommandHandlerRegistration
+        .RegisterCommandHandler<AddUpdateExpense, AddUpdateExpenseInfo, AddUpdateExpenseValidator>(services);
+      CommandHandlerRegistration
+        .RegisterCommandHandler<AddUpdateExpenseLine, AddUpdateExpenseLineInfo, AddUpdateExpenseLineValidator>(services);
     }
   }
 }
