@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Authorization;
 
+using ExpensesApi.Helpers;
 using ExpensesApi.Models;
 using ExpensesApi.ViewModels;
 using ExpensesApi.Services;
 using ExpensesApi.Services.Expenses;
-using ExpensesApi.Validation;
 
 namespace ExpensesApi.Controllers {
   /// <summary>
@@ -62,7 +62,7 @@ namespace ExpensesApi.Controllers {
       }
       catch (Exception e) {
         // TODO - Log exception
-        return StatusCode(500, e);
+        return new ExceptionActionResult(e);
       }
     }
 
@@ -84,12 +84,9 @@ namespace ExpensesApi.Controllers {
       try {
         expenseToReturn = getExpenseDetail.Handle(new FindExpenseById(id));
       }
-      catch (KeyNotFoundException noKeyEx) {
-        return NotFound(noKeyEx.Message);
-      }
       catch (Exception e) {
         // TODO - Log exception
-        return StatusCode(500, e);
+        return new ExceptionActionResult(e);
       }
 
       return Ok(expenseToReturn);
@@ -127,13 +124,9 @@ namespace ExpensesApi.Controllers {
       try {
         addExpense.Handle(expenseToProcess);
       }
-      catch (ValidationException ex) {
-        //MvcValidationExtension.AddModelErrors(this.ModelState, ex);
-        return BadRequest(this.ModelState);
-      }
       catch (Exception e) {
         // TODO - Log exception
-        return StatusCode(500, e);
+        return new ExceptionActionResult(e);
       }
 
       return Ok("Expense created successfully.");
@@ -152,6 +145,7 @@ namespace ExpensesApi.Controllers {
     ///         "name": "New Title",
     ///         "billedDate": "2017-02-01T00:00:00",
     ///         "effectiveDate": null,
+    ///         "expenseLinesIncluded": "True",
     ///         "expenseLines": [
     ///             {
     ///                 "name": "New Entry 1",
@@ -183,16 +177,9 @@ namespace ExpensesApi.Controllers {
       try {
         updateExpense.Handle(expenseToProcess);
       }
-      catch (ValidationException valEx) {
-        //MvcValidationExtension.AddModelErrors(this.ModelState, valEx);
-        return BadRequest(this.ModelState);
-      }
-      catch (KeyNotFoundException noKeyEx) {
-        return NotFound(noKeyEx.Message);
-      }
       catch (Exception e) {
         // TODO - Log exception
-        return StatusCode(500, e);
+        return new ExceptionActionResult(e);
       }
 
       return Ok("Expense updated successfully.");
@@ -214,12 +201,9 @@ namespace ExpensesApi.Controllers {
       try {
         deleteExpense.Handle(new DeleteExpenseInfo(id));
       }
-      catch (KeyNotFoundException noKeyEx) {
-        return NotFound(noKeyEx.Message);
-      }
       catch (Exception e) {
         // TODO - Log exception
-        return StatusCode(500, e.Message);
+        return new ExceptionActionResult(e);
       }
 
       return NoContent();
