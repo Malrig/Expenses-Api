@@ -25,7 +25,15 @@ namespace ExpensesApi.Models {
     /// The expense this line is associated with
     /// </summary>
     public int expenseId { get; set; }
-    
+
+    /// <summary>
+    /// Parent expense item
+    /// </summary>
     public virtual Expense expense { get; set; }
+
+    /// <summary>
+    /// Default constructor required for EntityFramework
+    /// </summary>
+    public ExpenseLine() { }
   }
 }

@@ -15,10 +15,20 @@ namespace ExpensesApi.Helpers {
   public class ExceptionActionResult : IActionResult {
     private readonly Exception Exception;
 
+    /// <summary>
+    /// Default constructor, consumes an exception.
+    /// </summary>
+    /// <param name="ex"></param>
     public ExceptionActionResult(Exception ex) {
       Exception = ex;
     }
 
+    /// <summary>
+    /// Function which returns the correct ObjectResult
+    /// based on the exception.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     public async Task ExecuteResultAsync(ActionContext context) {
       ObjectResult objectResult;
       if (Exception is ValidationException) {

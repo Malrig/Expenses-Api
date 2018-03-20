@@ -26,10 +26,23 @@ using ExpensesApi.Validation.Expenses;
 using ExpensesApi.Validation.ExpenseLines;
 
 namespace ExpensesApi {
+  /// <summary>
+  /// Class which handles starting the app and configuring the services
+  /// </summary>
   public class Startup {
+    /// <summary>
+    /// Configuration which is contained in the appsettings.json file
+    /// </summary>
     public IConfigurationRoot configuration { get; }
+    /// <summary>
+    /// Configuration which is contained in the hosting.json file
+    /// </summary>
     public IConfigurationRoot hostingConfiguration { get; }
 
+    /// <summary>
+    /// Constructor, gathers the configuration
+    /// </summary>
+    /// <param name="env"></param>
     public Startup(IHostingEnvironment env) {
       var builder = new ConfigurationBuilder()
           .SetBasePath(env.ContentRootPath)
@@ -44,7 +57,10 @@ namespace ExpensesApi {
       hostingConfiguration = hostingBuilder.Build();
     }
 
-    // This method gets called by the runtime. Use this method to add services to the container.
+    /// <summary>
+    /// This method gets called by the runtime and is used to add services to the container.
+    /// </summary>
+    /// <param name="services"></param>
     public void ConfigureServices(IServiceCollection services) {
       // Get the connection strings and whether to use an in memory database
       bool useInMemory = Convert.ToBoolean(configuration["UseInMemoryDatabase"]);
@@ -115,7 +131,13 @@ namespace ExpensesApi {
       ConfigureApplicationServices(services);
     }
 
-    // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
+
+    /// <summary>
+    /// This method gets called by the runtime and is used to configure the HTTP request pipeline. 
+    /// </summary>
+    /// <param name="app"></param>
+    /// <param name="env"></param>
+    /// <param name="loggerFactory"></param>
     public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory) {
       loggerFactory.AddConsole(configuration.GetSection("Logging"));
       loggerFactory.AddDebug();
@@ -143,17 +165,19 @@ namespace ExpensesApi {
       app.UseMvc();
     }
 
+    /// <summary>
+    /// This function adds all the commands and queries used by the application
+    /// </summary>
+    /// <param name="services"></param>
     public void ConfigureApplicationServices(IServiceCollection services) {
       // Add all queries as available services
       services
         .AddScoped<IQueryHandler<FindAllExpenses, ExpensesOverview>, GetExpensesOverview>()
-        .AddScoped<IQueryHandler<FindExpenseById, ExpenseDetail>, GetExpenseDetail>()
-        .AddScoped<IQueryHandler<FindExpenseLinesByExpense, ExpenseLineList>, GetExpenseLinesForExpense>();
+        .AddScoped<IQueryHandler<FindExpenseById, ExpenseDetail>, GetExpenseDetail>();
+        //.AddScoped<IQueryHandler<FindExpenseLinesByExpense, ExpenseLineList>, GetExpenseLinesForExpense>();
 
       // Add all commands which don't require validation
       services
-        .AddScoped<ICommandHandler<AddExpenseInfo>, AddExpense>()
-        .AddScoped<ICommandHandler<UpdateExpenseInfo>, UpdateExpense>()
         .AddScoped<ICommandHandler<DeleteExpenseInfo>, DeleteExpense>()
         .AddScoped<ICommandHandler<DeleteExpenseLineInfo>, DeleteExpenseLine>();
 

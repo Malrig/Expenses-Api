@@ -9,11 +9,21 @@ using ExpensesApi.Models;
 using ExpensesApi.Services.ExpenseLines;
 
 namespace ExpensesApi.Services.Expenses {
+  /// <summary>
+  /// Command to add or update a given expense using the information
+  /// provided in the AddUpdateExpenseInfo class.
+  /// </summary>
   public class AddUpdateExpense : ICommandHandler<AddUpdateExpenseInfo> {
     private ExpenseContext expenseDb;
     private ICommandHandler<AddUpdateExpenseLineInfo> addUpdateExpenseLine;
     private ICommandHandler<DeleteExpenseLineInfo> deleteExpenseLine;
 
+    /// <summary>
+    /// Constructor pulls in all the required services
+    /// </summary>
+    /// <param name="expenseDb"></param>
+    /// <param name="addUpdateExpenseLine"></param>
+    /// <param name="deleteExpenseLine"></param>
     public AddUpdateExpense(ExpenseContext expenseDb,
                             ICommandHandler<AddUpdateExpenseLineInfo> addUpdateExpenseLine,
                             ICommandHandler<DeleteExpenseLineInfo> deleteExpenseLine) {
@@ -22,6 +32,13 @@ namespace ExpensesApi.Services.Expenses {
       this.deleteExpenseLine = deleteExpenseLine;
     }
 
+    /// <summary>
+    /// This handles the command making all hte required changes
+    /// to the database.
+    /// If the expense lines are being updated then call the 
+    /// appropriate commands for them.
+    /// </summary>
+    /// <param name="command"></param>
     public void Handle(AddUpdateExpenseInfo command) {
       Expense existing = expenseDb.Expenses
                                   .Where(e => e.expenseId == command.expenseId)
@@ -59,18 +76,48 @@ namespace ExpensesApi.Services.Expenses {
     }
   }
 
+  /// <summary>
+  /// Class containing all the information required to add
+  /// or update an expense.
+  /// </summary>
   public class AddUpdateExpenseInfo {
+    /// <summary>
+    /// ID of the expense
+    /// </summary>  
     public int expenseId { get; set; }
+    /// <summary>
+    /// Expense name
+    /// </summary>
     public string name { get; set; }
+    /// <summary>
+    /// Date the expense was paid
+    /// </summary>
     public DateTime billedDate { get; set; }
+    /// <summary>
+    /// Date the expense should be recorded against
+    /// </summary>
     public DateTime? effectiveDate { get; set; }
 
+    /// <summary>
+    /// The expense lines the expense contains
+    /// </summary>
     public List<ExpenseLine> expenseLines { get; set; }
 
+    /// <summary>
+    /// Whether or not the expense lines for the expense
+    /// should be updated.
+    /// </summary>
     public bool expenseLinesIncluded { get; set; } = false;
 
+    /// <summary>
+    /// Default constructor required for EntityFramework
+    /// </summary>
     public AddUpdateExpenseInfo() { }
 
+    /// <summary>
+    /// Function which returns the expense item, used for
+    /// adding it to the database.
+    /// </summary>
     public Expense GetExpense() {
       return new Expense() {
         expenseId = expenseId,
@@ -81,6 +128,11 @@ namespace ExpensesApi.Services.Expenses {
       };
     }
 
+    /// <summary>
+    /// Function which determines whether the expense lines
+    /// should be updated or not.
+    /// </summary>
+    /// <returns></returns>
     public bool UpdateExpenseLines() {
       return expenseLinesIncluded && expenseLines != null;
     }

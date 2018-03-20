@@ -8,10 +8,19 @@ using System.Security.Claims;
 using System.Text;
 
 namespace JWT.Controllers {
+  /// <summary>
+  /// Controller which is in charge of assigning Json
+  /// Web Tokens
+  /// </summary>
   [Route("api/[controller]")]
   public class TokenController : Controller {
     private IConfiguration configuration;
 
+    /// <summary>
+    /// Constructor for the controller pulls in all the 
+    /// required services.
+    /// </summary>
+    /// <param name="config"></param>
     public TokenController(IConfiguration config) {
       configuration = config;
     }
@@ -60,17 +69,26 @@ namespace JWT.Controllers {
     }
 
     private bool Authenticate(LoginModel login) {
-      if (((login.Username == configuration["Jwt:AdminAccount:Username"]) && 
-           (login.Password == configuration["Jwt:AdminAccount:Password"])) ||
+      if (((login.username == configuration["Jwt:AdminAccount:Username"]) && 
+           (login.password == configuration["Jwt:AdminAccount:Password"])) ||
           (Convert.ToBoolean(configuration["Jwt:AllowAnonymousLogin"]))) {
         return true;
       }
       return false;
     }
 
+    /// <summary>
+    /// Viewmodel which is used to allow users to log in.
+    /// </summary>
     public class LoginModel {
-      public string Username { get; set; }
-      public string Password { get; set; }
+      /// <summary>
+      /// Username which the user wishes to log in as
+      /// </summary>
+      public string username { get; set; }
+      /// <summary>
+      /// Password which the user wants to use.
+      /// </summary>
+      public string password { get; set; }
     }
   }
 }

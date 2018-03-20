@@ -29,6 +29,11 @@ namespace ExpensesApi.Helpers {
     /// </summary>
     public List<ValidationResult> validationErrors { get; }
 
+    /// <summary>
+    /// Default constructor, consumes an exception and extracts
+    /// the different properties based on its type.
+    /// </summary>
+    /// <param name="exception"></param>
     public ErrorInfo(Exception exception) {
       if (exception is ValidationException) {
         ValidationException validationEx = (ValidationException)exception;

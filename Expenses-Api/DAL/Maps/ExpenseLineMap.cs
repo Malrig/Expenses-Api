@@ -8,7 +8,16 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ExpensesApi.Models;
 
 namespace ExpensesApi.DAL.Maps {
+  /// <summary>
+  /// Class which maps the ExpenseLine models properties
+  /// to database tables and columns.
+  /// </summary>
   public class ExpenseLineMap : EntityTypeConfiguration<ExpenseLine> {
+    /// <summary>
+    /// Function which maps models to their properties in 
+    /// the database.
+    /// </summary>
+    /// <param name="builder"></param>
     public override void Map(EntityTypeBuilder<ExpenseLine> builder) {
       builder.ToTable("expenseLine", "dbo");
       builder.HasKey(b => b.expenseLineId);

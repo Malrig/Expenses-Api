@@ -18,10 +18,19 @@ namespace ExpensesApi.Validation.Expenses {
   public sealed class AddUpdateExpenseValidator : Validator<AddUpdateExpenseInfo> {
     ExpenseContext expensesDb;
 
+    /// <summary>
+    /// Constructor pulls in all the required services
+    /// </summary>
+    /// <param name="expensesDb"></param>
     public AddUpdateExpenseValidator(ExpenseContext expensesDb) {
       this.expensesDb = expensesDb;
     }
 
+    /// <summary>
+    /// This function actually performs the validation.
+    /// </summary>
+    /// <param name="command"></param>
+    /// <returns></returns>
     protected override IEnumerable<ValidationResult> Validate(AddUpdateExpenseInfo command) {
       List<ValidationResult> validationResults = new List<ValidationResult>();
 

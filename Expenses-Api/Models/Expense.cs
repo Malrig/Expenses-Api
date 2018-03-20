@@ -34,6 +34,9 @@ namespace ExpensesApi.Models {
     /// </summary>
     public virtual ICollection<ExpenseLine> expenseLines { get; set; }
     
+    /// <summary>
+    /// Default constructor required for EntityFramework
+    /// </summary>
     public Expense() { }
   }
 }
