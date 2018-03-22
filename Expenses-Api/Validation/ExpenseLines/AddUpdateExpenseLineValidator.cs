@@ -50,14 +50,14 @@ namespace ExpensesApi.Validation.ExpenseLines {
                                                    $"No expense line exists with the ID: {command.expenseLineId}"));
       }
       if (existingExpense == null) {
-        validationResults.Add(new ValidationResult("ID",
+        validationResults.Add(new ValidationResult("ExpenseID",
                                                    $"No expense exists with the ID: {command.expenseId}"));
       }
       // Check basic requirements for expenses
       if ((command.name == null) ||
           (command.name.Trim().Length == 0)) {
         validationResults.Add(new ValidationResult("Name",
-                                                   "Name is required on an expense line."));
+                                                   "Name is required on an expense line"));
       }
 
       return validationResults;

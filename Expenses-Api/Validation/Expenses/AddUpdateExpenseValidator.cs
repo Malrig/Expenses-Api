@@ -49,12 +49,12 @@ namespace ExpensesApi.Validation.Expenses {
       if ((command.name == null) ||
           (command.name.Trim().Length == 0)) {
         validationResults.Add(new ValidationResult("Name",
-                                                   "Name is required on an expense item."));
+                                                   "Name is required on an expense item"));
       }
       if ((command.billedDate == null) ||
           (command.billedDate == DateTime.MinValue)) {
-        validationResults.Add(new ValidationResult("billedDate",
-                                                   "A billed date is required for an expense item."));
+        validationResults.Add(new ValidationResult("BilledDate",
+                                                   "A billed date is required for an expense item"));
       }
 
       return validationResults;

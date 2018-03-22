@@ -73,7 +73,7 @@ namespace ExpensesApi {
         services.AddDbContext<ExpenseContext>(options => options.UseSqlServer(expenseConnectionString));
       }
       else {
-        services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase());
+        services.AddDbContext<ExpenseContext>(options => options.UseInMemoryDatabase(databaseName: "ExpensesDatabase"));
       }
 
       // Configure JWT based authentication
