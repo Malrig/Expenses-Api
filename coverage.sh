@@ -40,7 +40,7 @@ $OPENCOVER \
   -oldstyle \
   -searchdirs:./Expenses-Api-Tests/bin/$CONFIG/netcoreapp2.0 \
   -hideskipped:File \
-  -filter:"+[Expenses*]* -[Expenses-Api-Tests*]* -[Expenses*]*.Startup -[Expenses*]*.Program"
+  -filter:"+[Expenses-Api]* -[Expenses-Api-Tests*]* -[Expenses-Api]ExpensesApi.Startup* -[Expenses-Api]ExpensesApi.Program"
   
 echo "Generating HTML report"
 $REPORTGENERATOR \
